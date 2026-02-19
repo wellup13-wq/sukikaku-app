@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自分のこと好きな確率診断</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const Q_ANY = [
+      { id:"a1", text:"複数人で笑ったとき、その人が最初に視線を向けるのはあなたのことが多い？", hint:"感情が動いた瞬間、人は最も意識している人を無意識に見ます。「笑いの視線チェック」は脈のサインとして心理学的に有名です。", options:["よくそう感じる","たまに感じる","あまりない","気にしたことがない"], scores:[3,2,1,0] },
+      { id:"a2", text:"自分がふと話した小さなこと（好きな食べ物・好きな曲など）を、後日その人が覚えていたことがある？", hint:"好きな人の情報は無意識に深く記憶されます。特に意識していない会話の内容を覚えているのは、強い関心のサインです。", options:["何度もある","1〜2回ある","覚えていたことはない","そういう会話自体がない"], scores:[3,2,1,0] },
+      { id:"a3", text:"ふたりきりになったとき、自然な沈黙があっても気まずがらず穏やかな雰囲気のままでいられる？", hint:"「安心できる沈黙」は心理的距離が近い証拠。好きな人との沈黙は緊張ではなく穏やかさで感じられます。", options:["よくそういう沈黙がある","たまにそういう感じになる","沈黙になると急に話題を出してくる","ほとんど2人になることがない"], scores:[3,2,1,0] },
+      { id:"a4", text:"その人は、あなたが落ち込んでいたり忙しそうなとき、何も言わずそっとそばにいたり助けようとすることがある？", hint:"言葉より行動で支えようとするのは、本能的な保護欲・好意のあらわれです。", options:["よくある","たまにある","あまりない","特にない"], scores:[3,2,1,0] },
+      { id:"a5", text:"その人はあなたの話の途中に「それって〇〇ってこと？」と、言いたいことを先取りして言うことがある？", hint:"「先読み・ミラーリング」は相手に強い関心を持っているときに起きる無意識の行動です。", options:["よくある","たまにある","あまりない","全くない"], scores:[3,2,1,0] },
+      { id:"a6", text:"その人は、あなたといるときに少しだけぎこちなくなったり、いつもと違うテンションになることがある？", hint:"好きな人の前では「普通にしようとして」不自然になります。緊張や意識のあらわれです。", options:["明らかに違う雰囲気になる","少し違う気がする","特に変わらない","むしろすごく自然体でいる"], scores:[3,2,1,0] },
+      { id:"a7", text:"その人は、あなたが他の異性と話しているとき、さりげなく割り込んできたり話題を変えようとすることがある？", hint:"嫉妬の行動。意識しないと気づきにくいですが、これは強い関心のサインです。", options:["よくある","たまにある","あまりない","全くない"], scores:[3,2,1,0] },
+      { id:"a8", text:"その人は、あなたが悩みを話したとき、解決策より「共感」を先に示すことが多い？", hint:"感情的なケアを優先する行動は「嫌われたくない・信頼されたい」という気持ちのあらわれです。", options:["いつも共感してくれる","だいたいそうしてくれる","解決策ばかり言ってくる","あまりそういう会話をしない"], scores:[3,2,1,0] },
+    ];
+
+    const Q_MALE_CRUSH = [
+      { id:"m1", text:"その人は、あなたの前で他の男性より少し「大きく見せよう」としたり、張り合うような素振りがある？", hint:"男性は好きな相手の前で無意識に競争心が出ます（優位性誇示行動）。", options:["明らかにそういう場面がある","たまにそういう感じがする","あまりない","むしろ引いている感じ"], scores:[3,2,1,0] },
+      { id:"m2", text:"その人は、あなたが困っていると積極的に解決しようとしてくれることがある？", hint:"男性は好きな相手の「問題を解決したい」という本能（FIX-IT本能）が強く出ます。", options:["よくそうしてくれる","たまにそういう場面がある","あまりない","そういうことはない"], scores:[3,2,1,0] },
+      { id:"m3", text:"LINEやDMはそっけないのに、リアルで会うと話しかけてきたり距離が近くなることがある？", hint:"男性は感情を文章で表現するのが苦手なことが多く、好意は「行動」で示す傾向があります。", options:["まさにそのパターン","少しそういう感じがある","LINEもリアルも同じ感じ","リアルでも特に変わらない"], scores:[3,2,1,0] },
+      { id:"m4", text:"その人は、さりげなく物理的な距離が近かったり、隣に座ろうとすることが多い？", hint:"男性は好きな相手に対して物理的な距離を縮めようとする傾向があります。", options:["よく気づいたら近くにいる","たまに近い気がする","特にそういうことはない","むしろ距離を保っている感じ"], scores:[3,2,1,0] },
+      { id:"m5", text:"その人は、あなたの前で自分の武勇伝や実績・特技をアピールしてくることがある？", hint:"「よく見られたい・認められたい」という心理が好きな相手の前で自己アピールとして出ます。", options:["自分にだけよくアピールしてくる気がする","たまにそういうことがある","あまりアピールしてこない","むしろ地味にしている"], scores:[3,2,1,0] },
+      { id:"m6", text:"その人は、あなたに対してだけ少し「ぶっきらぼう」になったり、逆に妙に丁寧になったりする？", hint:"男性は好きな相手の前で「どう振る舞えばいいかわからなくなる」ことがあります。", options:["確かに自分への態度だけ違う感じがする","少しそういうことがある","みんなと同じ接し方","全くそんなことはない"], scores:[3,2,1,0] },
+      { id:"m7", text:"その人はあなたのことを、他の男友達や仲間に話しているらしいことがある？", hint:"男性は好きな相手のことを仲間に話す傾向があります。", options:["そういう話を聞いたことがある","もしかしたらそうかも","あまりわからない","そういうことはなさそう"], scores:[3,2,1,0] },
+      { id:"m8", text:"その人は、あなたが帰るとき・別れるときに少し名残惜しそうにしたり、話題を続けようとすることがある？", hint:"男性は好きな相手と別れることへの惜しさが行動に出ます。", options:["よくそういう感じがある","たまにある","あまりない","すんなり別れる感じ"], scores:[3,2,1,0] },
+    ];
+
+    const Q_FEMALE_CRUSH = [
+      { id:"f1", text:"その人は、あなたの予定や行動をよく把握していて「今日どこ行くの？」などよく聞いてくる？", hint:"女性は好きな相手の生活に強い関心を持ちます。日常を積極的に把握しようとするのは特別な存在として意識しているサインです。", options:["よく聞いてくれる","たまに聞いてくれる","あまりない","全然聞いてこない"], scores:[3,2,1,0] },
+      { id:"f2", text:"その人は、さりげなくあなたの腕・肩・手などに軽く触れてくることがある？", hint:"女性が好きな相手にさりげなくタッチするのは「距離を縮めたい」という心理的サインです。", options:["よくある","たまにある","ほとんどない","全くない"], scores:[3,2,1,0] },
+      { id:"f3", text:"その人は、あなたの見た目の変化（髪型・服・雰囲気）によく気づいてコメントしてくれる？", hint:"好きな相手の外見は無意識に細かく観察されます。気づきの細かさは強い関心のサインです。", options:["よく気づいてくれる","たまに気づいてくれる","あまり気づいてくれない","全く気づかない"], scores:[3,2,1,0] },
+      { id:"f4", text:"その人は、自分のプライベートな悩みや本音をあなただけに話してくれることがある？", hint:"女性は本当に信頼・好意を持っている相手にだけ脆い部分や本音を話します。", options:["よく話してくれる","たまに話してくれる","あまりそういう話はしてくれない","全くしてくれない"], scores:[3,2,1,0] },
+      { id:"f5", text:"グループにいるとき、他の女性があなたに話しかけていると少し静かになったり様子が変わることがある？", hint:"女性の嫉妬はあからさまには出にくく「静かになる・少し引く」という形で出ます。", options:["そういう場面を見たことがある","少しそういう感じがした気がする","あまりわからない","全くそういうことはない"], scores:[3,2,1,0] },
+      { id:"f6", text:"その人は、あなたが帰ろうとすると話題を変えたり「もう少し話そう」という空気を作ってくることがある？", hint:"「もっと一緒にいたい」という気持ちが引き止め行動として出ます。", options:["よくそういうことがある","たまにある","あまりない","すんなり解散する感じ"], scores:[3,2,1,0] },
+      { id:"f7", text:"「前に〇〇って言ってたじゃん」などあなたのことをよく観察・記憶しているとわかる発言がある？", hint:"女性は好きな相手の発言・行動を細かく記憶します。記憶の細かさは強い関心のサインです。", options:["よくそういう発言がある","たまにある","あまりない","そういう記憶力の発揮はない"], scores:[3,2,1,0] },
+      { id:"f8", text:"その人はLINEやDMの返信が速く、スタンプや絵文字・リアクションが他の人へより多い気がする？", hint:"女性は好きな相手とのコミュニケーションをより豊かにしようと表現を増やす傾向があります。", options:["明らかに自分への返信が違う","少し違う気がする","みんな同じくらい","むしろ自分への反応は薄い"], scores:[3,2,1,0] },
+    ];
+
+    // ── ロジック ──
+    const SUPABASE_URL = "https://xxxxxxxxxxxxxxxx.supabase.co";
+    const SUPABASE_ANON_KEY = "your-anon-key-here";
+
+    async function saveDiagnosis({ userAge, userGender, crushAge, crushGender, resultPct }) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/diagnoses`, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY, "Authorization":`Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ user_age:userAge, user_gender:userGender, crush_age:crushAge, crush_gender:crushGender, result_pct:resultPct }),
+        });
+      } catch(e) { console.warn("送信エラー:", e); }
+    }
+
+    function shuffle(arr) {
+      const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+    }
+    function selectQuestions(cg) {
+      const spec = cg==="male"?Q_MALE_CRUSH:cg==="female"?Q_FEMALE_CRUSH:[];
+      const gen=shuffle(Q_ANY); const sp=shuffle(spec);
+      return shuffle(cg==="other"?gen.slice(0,12):[...gen.slice(0,6),...sp.slice(0,6)]);
+    }
+    function calcAgeModifier(ca,ua){
+      let m=0; if(ca<20)m-=4; else if(ca<25)m+=2; else if(ca>=30)m-=2;
+      if(Math.abs(ca-ua)>=5)m-=3; if(Math.abs(ca-ua)<=1)m+=3;
+      return Math.max(-10,Math.min(10,m));
+    }
+    function calcGenderModifier(ug,cg){ return ug===cg&&cg!=="other"?-2:0; }
+    function calcResult(ans,qs){ return Math.round(ans.reduce((s,a,i)=>s+qs[i].scores[a],0)/(qs.length*3)*100); }
+    function getComment(p){
+      if(p>=85)return{label:"ほぼ確定💘",color:"#c0396e",msg:"心理的サインが非常に多く出ています。相手はほぼ確実にあなたを意識しています。あとは勇気だけです。"};
+      if(p>=70)return{label:"かなり脈アリ🌸",color:"#9b45b2",msg:"複数の心理的サインが確認されました。好意を持っている可能性がかなり高いです。"};
+      if(p>=55)return{label:"脈アリかも✨",color:"#5a6ed0",msg:"好意のサインはあります。もう少し距離を縮めながら観察してみましょう。"};
+      if(p>=40)return{label:"微妙なライン🌀",color:"#3a9e9e",msg:"まだはっきりとはわかりません。接触を増やしてサインが増えるか確認しましょう。"};
+      if(p>=25)return{label:"脈なしかも…😶",color:"#778899",msg:"現時点では好意のサインが少なめです。ただ、状況は変わります。"};
+      return{label:"今は厳しそう😅",color:"#95a5a6",msg:"現時点ではサインが見られません。まずは関係を深めるところから始めましょう。"};
+    }
+
+    let memStats={total:0,sum:0,dist:Array(10).fill(0)};
+    function addStat(p){memStats.total++;memStats.sum+=p;memStats.dist[Math.min(9,Math.floor(p/10))]++;}
+
+    // ── スタイル ──
+    const base={minHeight:"100vh",background:"linear-gradient(145deg,#eef2ff 0%,#f5f0ff 50%,#fef0f5 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",fontFamily:"'Helvetica Neue',Arial,sans-serif"};
+    const card={background:"rgba(255,255,255,0.88)",backdropFilter:"blur(12px)",borderRadius:"24px",padding:"32px 28px",maxWidth:"440px",width:"100%",boxShadow:"0 8px 32px rgba(120,80,180,0.12)"};
+    const mkBtn=(bg,color="#fff",ghost=false)=>({background:ghost?"transparent":bg,color:ghost?"#9b8ec4":color,border:ghost?"2px solid #c4b0e8":"none",borderRadius:"14px",padding:"13px 0",width:"100%",fontSize:"16px",fontWeight:"700",cursor:"pointer",marginTop:"10px",letterSpacing:"0.04em",display:"block"});
+    const inputSt={width:"100%",padding:"10px 14px",borderRadius:"10px",border:"1.5px solid #ddd4f8",fontSize:"15px",color:"#3d2e6a",background:"#faf8ff",boxSizing:"border-box",marginTop:"6px"};
+    const lbl={fontSize:"13px",fontWeight:"700",color:"#5a4a7a"};
+    const tagSt={display:"inline-block",background:"rgba(120,80,200,0.10)",color:"#7850c8",borderRadius:"20px",padding:"2px 10px",fontSize:"12px",fontWeight:"700",marginBottom:"8px"};
+    const GENDER_OPTIONS=[{value:"male",label:"男性"},{value:"female",label:"女性"},{value:"other",label:"その他 / 答えない"}];
+
+    function GenderSelect({value,onChange}){
+      return <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>{GENDER_OPTIONS.map(g=><button key={g.value} onClick={()=>onChange(g.value)} style={{flex:1,padding:"10px 4px",borderRadius:"10px",fontSize:"13px",fontWeight:"700",cursor:"pointer",border:"2px solid",borderColor:value===g.value?"#8a5cf7":"#ddd4f8",background:value===g.value?"rgba(138,92,247,0.12)":"#faf8ff",color:value===g.value?"#7850c8":"#9b8ec4"}}>{g.label}</button>)}</div>;
+    }
+
+    function App(){
+      const [screen,setScreen]=useState("top");
+      const [form,setForm]=useState({userAge:"",userGender:"",crushYear:"",crushMonth:"",crushAge:"",crushGender:""});
+      const [formError,setFormError]=useState("");
+      const [meta,setMeta]=useState(null);
+      const [questions,setQuestions]=useState([]);
+      const [current,setCurrent]=useState(0);
+      const [answers,setAnswers]=useState([]);
+      const [result,setResult]=useState(null);
+      const [showHint,setShowHint]=useState(false);
+
+      function startForm(){setScreen("profile");setFormError("");}
+      function submit(){
+        const uA=parseInt(form.userAge,10);
+        if(!uA||uA<10||uA>80){setFormError("あなたの年齢を正しく入力してください（10〜80）");return;}
+        if(!form.userGender){setFormError("あなたの性別を選択してください");return;}
+        if(!form.crushGender){setFormError("相手の性別を選択してください");return;}
+        let cA;
+        if(form.crushYear){const y=parseInt(form.crushYear,10);const now=new Date();const m=form.crushMonth?parseInt(form.crushMonth,10):null;cA=now.getFullYear()-y-(m&&now.getMonth()+1<m?1:0);if(cA<10||cA>90){setFormError("相手の生年が正しくありません");return;}}
+        else if(form.crushAge){cA=parseInt(form.crushAge,10);if(!cA||cA<10||cA>90){setFormError("相手の年齢を正しく入力してください");return;}}
+        else{setFormError("相手の生年またはおおよその年齢を入力してください");return;}
+        setFormError("");
+        const aMod=calcAgeModifier(cA,uA);const gMod=calcGenderModifier(form.userGender,form.crushGender);
+        setMeta({userAge:uA,userGender:form.userGender,crushAge:cA,crushGender:form.crushGender,ageModifier:aMod,genderModifier:gMod});
+        const qs=selectQuestions(form.crushGender);setQuestions(qs);setAnswers([]);setCurrent(0);setShowHint(false);setScreen("quiz");
+      }
+      function answer(idx){
+        const next=[...answers,idx];
+        if(current+1<questions.length){setShowHint(false);setAnswers(next);setCurrent(c=>c+1);}
+        else{
+          let pct=calcResult(next,questions)+meta.ageModifier+meta.genderModifier;
+          pct=Math.max(5,Math.min(98,pct));addStat(pct);
+          saveDiagnosis({userAge:meta.userAge,userGender:meta.userGender,crushAge:meta.crushAge,crushGender:meta.crushGender,resultPct:pct});
+          setResult(pct);setScreen("result");
+        }
+      }
+      function goBack(){if(current===0){setScreen("profile");return;}setShowHint(false);setAnswers(a=>a.slice(0,-1));setCurrent(c=>c-1);}
+
+      const crushGenderLabel=meta?.crushGender==="male"?"男性":meta?.crushGender==="female"?"女性":"その他";
+      const ageLabel=meta?(meta.crushAge<20?"10代":meta.crushAge<25?"20代前半":meta.crushAge<30?"20代後半":meta.crushAge<35?"30代前半":"30代以上"):"";
+      const ageNote=meta?.crushAge<20?"10代は感情を隠しやすい傾向があるため、判定を厳しめに補正しています。":meta?.crushAge>=30?"30代以降は行動が抑制される傾向があるため、少し厳しめに補正しています。":"20代は感情が行動に出やすいため、比較的素直に判定しています。";
+      const genderNote=meta?.userGender===meta?.crushGender&&meta?.crushGender!=="other"?"同性間では感情表現が読みにくいため、判定をやや厳しめに補正しています。":"";
+      const totalMod=meta?meta.ageModifier+meta.genderModifier:0;
+      const s=memStats;const avg=s.total>0?Math.round(s.sum/s.total):null;
+      const shareText=result!==null?`気になるあの人が私のことを好きな確率は…${result}%！\n${getComment(result)?.label}\n\n#好き確診断 #自分のこと好きな確率診断\n`:"";
+
+      if(screen==="top")return(
+        <div style={base}><div style={card}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"52px",marginBottom:"8px"}}>💭</div>
+            <h1 style={{fontSize:"21px",fontWeight:"900",color:"#2d1f4e",lineHeight:1.35,margin:"0 0 6px"}}>自分のこと好きな確率診断</h1>
+            <p style={{fontSize:"12px",color:"#9b8ec4",margin:"0 0 14px"}}>通称「<strong>好き確診断</strong>」でおなじみの、あれです。</p>
+            <p style={{fontSize:"14px",color:"#5a4a7a",lineHeight:1.8,margin:"0 0 16px"}}>気になるあの人の<strong>何気ない言動・行動</strong>を<br/>心理学的に分析して、好きな確率を診断します。<br/><span style={{fontSize:"12px",color:"#9b8ec4"}}>相手の性別・年代で判定ロジックが変わります。</span></p>
+            <div style={{background:"rgba(120,80,200,0.06)",borderRadius:"12px",padding:"12px",marginBottom:"22px",fontSize:"13px",color:"#7850c8"}}>所要時間：約<strong>2〜3分</strong>｜全<strong>12問（ランダム出題）</strong></div>
+            <button style={mkBtn("linear-gradient(135deg,#8a5cf7,#d066a3)")} onClick={startForm}>診断スタート ✨</button>
+            <button style={{...mkBtn("rgba(130,90,210,0.10)","#7850c8"),border:"none"}} onClick={()=>setScreen("stats")}>みんなの結果を見る 📊</button>
+          </div>
+        </div></div>
+      );
+
+      if(screen==="profile")return(
+        <div style={base}><div style={card}>
+          <h2 style={{fontSize:"18px",fontWeight:"900",color:"#2d1f4e",margin:"0 0 4px"}}>あなたと相手の情報</h2>
+          <p style={{fontSize:"12px",color:"#9b8ec4",margin:"0 0 20px",lineHeight:1.6}}>性別・年代によって恋愛行動のパターンが変わります。<br/>より精度の高い診断のために入力してください。</p>
+          <div style={{background:"rgba(138,92,247,0.05)",borderRadius:"14px",padding:"16px",marginBottom:"14px"}}>
+            <p style={{...lbl,margin:"0 0 10px",fontSize:"14px"}}>あなたについて</p>
+            <label style={lbl}>年齢 <span style={{color:"#d066a3"}}>*必須</span></label>
+            <input style={inputSt} type="number" placeholder="例：21" value={form.userAge} onChange={e=>setForm(f=>({...f,userAge:e.target.value}))}/>
+            <label style={{...lbl,display:"block",marginTop:"12px"}}>性別 <span style={{color:"#d066a3"}}>*必須</span></label>
+            <GenderSelect value={form.userGender} onChange={v=>setForm(f=>({...f,userGender:v}))}/>
+          </div>
+          <div style={{background:"rgba(208,102,163,0.05)",borderRadius:"14px",padding:"16px",marginBottom:"12px"}}>
+            <p style={{...lbl,margin:"0 0 10px",fontSize:"14px"}}>相手について</p>
+            <label style={lbl}>性別 <span style={{color:"#d066a3"}}>*必須</span></label>
+            <GenderSelect value={form.crushGender} onChange={v=>setForm(f=>({...f,crushGender:v}))}/>
+            <label style={{...lbl,display:"block",marginTop:"12px"}}>生年（わかる場合）</label>
+            <div style={{display:"flex",gap:"8px",marginTop:"6px"}}>
+              <input style={{...inputSt,marginTop:0,flex:2}} type="number" placeholder="西暦（例：2001）" value={form.crushYear} onChange={e=>setForm(f=>({...f,crushYear:e.target.value,crushAge:""}))}/>
+              <input style={{...inputSt,marginTop:0,flex:1}} type="number" placeholder="月（任意）" value={form.crushMonth} onChange={e=>setForm(f=>({...f,crushMonth:e.target.value}))}/>
+            </div>
+            {(()=>{
+              if(!form.crushYear)return null;
+              const y=parseInt(form.crushYear,10);const now=new Date();
+              if(!y||y<1920||y>now.getFullYear())return null;
+              const m=form.crushMonth?parseInt(form.crushMonth,10):null;
+              const age=now.getFullYear()-y-(m&&now.getMonth()+1<m?1:0);
+              if(age<1||age>100)return null;
+              return <div style={{fontSize:"12px",color:"#8a5cf7",fontWeight:"700",margin:"6px 0 10px 2px"}}>→ 年齢：{age}歳</div>;
+            })()}
+            <label style={{...lbl,display:"block",marginTop:form.crushYear?"0":"12px"}}>おおよその年齢（生年不明の場合）</label>
+            <input style={inputSt} type="number" placeholder="例：22" value={form.crushAge} onChange={e=>setForm(f=>({...f,crushAge:e.target.value,crushYear:"",crushMonth:""}))}/>
+          </div>
+          {formError&&<p style={{color:"#e05a5a",fontSize:"13px",margin:"0 0 8px"}}>{formError}</p>}
+          <button style={mkBtn("linear-gradient(135deg,#8a5cf7,#d066a3)")} onClick={submit}>診断へ進む →</button>
+          <button style={{...mkBtn("transparent","#9b8ec4",true),marginTop:"8px"}} onClick={()=>setScreen("top")}>← 戻る</button>
+        </div></div>
+      );
+
+      if(screen==="quiz"&&questions.length>0){
+        const q=questions[current];const progress=(current/questions.length)*100;
+        return(
+          <div style={base}><div style={card}>
+            <div style={{display:"flex",alignItems:"center",marginBottom:"16px",gap:"10px"}}>
+              <button onClick={goBack} style={{background:"none",border:"none",cursor:"pointer",fontSize:"20px",color:"#9b8ec4",padding:0}}>‹</button>
+              <div style={{flex:1,height:"6px",background:"#e8e2f8",borderRadius:"10px",overflow:"hidden"}}>
+                <div style={{width:`${progress}%`,height:"100%",background:"linear-gradient(90deg,#8a5cf7,#d066a3)",borderRadius:"10px",transition:"width .3s"}}/>
+              </div>
+              <span style={{fontSize:"12px",color:"#9b8ec4",fontWeight:"700",whiteSpace:"nowrap"}}>{current+1}/{questions.length}</span>
+            </div>
+            <p style={{fontSize:"15px",fontWeight:"700",color:"#2d1f4e",lineHeight:1.65,margin:"0 0 12px",minHeight:"68px"}}>Q{current+1}. {q.text}</p>
+            <button onClick={()=>setShowHint(h=>!h)} style={{background:"none",border:"1px solid #ddd4f8",borderRadius:"8px",padding:"5px 10px",fontSize:"11px",color:"#9b8ec4",cursor:"pointer",marginBottom:"12px"}}>💡 この質問のポイントを見る</button>
+            {showHint&&<div style={{background:"rgba(120,80,200,0.07)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px",fontSize:"12px",color:"#6a5a9a",lineHeight:1.65}}>{q.hint}</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+              {q.options.map((opt,i)=>(
+                <button key={i} onClick={()=>answer(i)} style={{background:"rgba(255,255,255,0.92)",border:"1.5px solid #ddd4f8",borderRadius:"12px",padding:"12px 14px",textAlign:"left",cursor:"pointer",fontSize:"14px",color:"#3d2e6a",fontWeight:"500"}}>
+                  {["Ⓐ","Ⓑ","Ⓒ","Ⓓ"][i]} {opt}
+                </button>
+              ))}
+            </div>
+          </div></div>
+        );
+      }
+
+      if(screen==="result"&&result!==null){
+        const comment=getComment(result);const diff=avg!==null?result-avg:null;
+        return(
+          <div style={base}><div style={card}>
+            <div style={{textAlign:"center"}}>
+              <span style={tagSt}>#好き確診断</span>
+              <div style={{fontSize:"12px",color:"#9b8ec4",margin:"6px 0 2px"}}>相手：{crushGenderLabel}・{ageLabel}｜心理学的行動分析</div>
+              <div style={{fontSize:"78px",fontWeight:"900",lineHeight:1,background:`linear-gradient(135deg,${comment.color},#8a5cf7)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",margin:"4px 0"}}>{result}<span style={{fontSize:"34px"}}>%</span></div>
+              <div style={{fontSize:"21px",fontWeight:"800",color:comment.color,margin:"0 0 14px"}}>{comment.label}</div>
+              <div style={{background:"rgba(120,80,200,0.07)",borderRadius:"14px",padding:"13px 15px",marginBottom:"12px",fontSize:"14px",color:"#3d2e6a",lineHeight:1.7,textAlign:"left"}}>{comment.msg}</div>
+              <div style={{background:"#fafafa",border:"1px solid #e8e2f8",borderRadius:"12px",padding:"11px 14px",marginBottom:"12px",fontSize:"12px",color:"#7a6a9a",lineHeight:1.7,textAlign:"left"}}>
+                <strong>📐 補正の内訳：</strong><br/>
+                ・{ageLabel}補正：{meta.ageModifier>0?"+":""}{meta.ageModifier}pt　{ageNote}<br/>
+                {genderNote&&<>・性別補正：{meta.genderModifier}pt　{genderNote}<br/></>}
+                ・合計補正：<strong style={{color:totalMod>=0?"#7850c8":"#e05a5a"}}>{totalMod>0?"+":""}{totalMod}pt</strong>
+              </div>
+              {avg!==null&&<div style={{background:"#fef8ff",border:"1.5px solid #e0d4f8",borderRadius:"12px",padding:"11px",marginBottom:"14px",fontSize:"13px",color:"#7850c8"}}>全体平均 <strong>{avg}%</strong> に対してあなたは<strong style={{color:diff>=0?"#d066a3":"#888"}}> {diff>=0?"+":""}{diff}%</strong>{diff>=15?"　かなり高い！🔥":diff<=-15?"　少し低めかも🌱":"　ほぼ平均的"}</div>}
+              <button style={mkBtn("linear-gradient(135deg,#1da1f2,#0d8fd8)")} onClick={()=>window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`,"_blank")}>𝕏（Twitter）でシェア</button>
+              <button style={mkBtn("linear-gradient(135deg,#8a5cf7,#d066a3)")} onClick={()=>navigator.clipboard.writeText(shareText).then(()=>alert("コピーしました！\n「#好き確診断」でシェアしてね🙌"))}>テキストをコピーして貼る</button>
+              <p style={{fontSize:"11px",color:"#b0a0c8",margin:"6px 0 10px"}}>シェア文に「#好き確診断」が自動入力されます</p>
+              <div style={{display:"flex",gap:"10px"}}>
+                <button style={{...mkBtn("rgba(130,90,210,0.10)","#7850c8"),border:"none",flex:1}} onClick={startForm}>もう一度やる</button>
+                <button style={{...mkBtn("rgba(130,90,210,0.10)","#7850c8"),border:"none",flex:1}} onClick={()=>setScreen("stats")}>みんなの結果</button>
+              </div>
+              <button style={{...mkBtn("transparent","#9b8ec4",true),marginTop:"8px"}} onClick={()=>setScreen("top")}>トップへ</button>
+            </div>
+          </div></div>
+        );
+      }
+
+      if(screen==="stats"){
+        const labels=["0-9","10-19","20-29","30-39","40-49","50-59","60-69","70-79","80-89","90-100"];
+        const maxD=Math.max(...s.dist,1);
+        return(
+          <div style={base}><div style={card}>
+            <h2 style={{fontSize:"18px",fontWeight:"800",color:"#2d1f4e",margin:"0 0 4px"}}>みんなの好き確診断 📊</h2>
+            <p style={{fontSize:"12px",color:"#9b8ec4",margin:"0 0 18px"}}>このセッションの診断データ</p>
+            {s.total===0?<p style={{color:"#b0a0c8",textAlign:"center",margin:"30px 0"}}>まだデータがありません<br/>先に診断してみよう！</p>:(
+              <>
+                <div style={{display:"flex",gap:"12px",marginBottom:"20px"}}>
+                  {[["平均確率",`${avg}%`],["総診断数",`${s.total}回`]].map(([l,v])=>(
+                    <div key={l} style={{flex:1,background:"rgba(120,80,200,0.08)",borderRadius:"12px",padding:"14px",textAlign:"center"}}>
+                      <div style={{fontSize:"28px",fontWeight:"900",color:"#7850c8"}}>{v}</div>
+                      <div style={{fontSize:"12px",color:"#9b8ec4"}}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{fontSize:"13px",fontWeight:"700",color:"#5a4a7a",margin:"0 0 10px"}}>確率の分布</p>
+                {labels.map((label,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",marginBottom:"6px",gap:"8px"}}>
+                    <span style={{fontSize:"11px",color:"#9b8ec4",width:"48px",flexShrink:0}}>{label}%</span>
+                    <div style={{flex:1,height:"18px",background:"#f0ebff",borderRadius:"6px",overflow:"hidden"}}>
+                      <div style={{width:`${(s.dist[i]/maxD)*100}%`,height:"100%",background:"linear-gradient(90deg,#8a5cf7,#d066a3)",borderRadius:"6px"}}/>
+                    </div>
+                    <span style={{fontSize:"11px",color:"#9b8ec4",width:"20px",textAlign:"right"}}>{s.dist[i]}</span>
+                  </div>
+                ))}
+              </>
+            )}
+            <button style={mkBtn("linear-gradient(135deg,#8a5cf7,#d066a3)")} onClick={startForm}>診断する</button>
+            <button style={{...mkBtn("transparent","#9b8ec4",true),marginTop:"8px"}} onClick={()=>setScreen("top")}>トップへ</button>
+          </div></div>
+        );
+      }
+      return null;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
